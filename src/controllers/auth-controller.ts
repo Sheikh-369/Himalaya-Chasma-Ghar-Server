@@ -5,6 +5,9 @@ import jwt from "jsonwebtoken"
 import { sendOTP } from "../services/sendOPT";
 import sendEmail from "../services/emailService";
 
+import { config } from "dotenv";
+config();
+
 class AuthController {
 
   //******************user register**************************
@@ -198,24 +201,24 @@ class AuthController {
 
 
 //   // Fetch single user by ID
-// static async getUserById(req: Request, res: Response) {
-//   try {
-//     const { id } = req.params; // extract id
+static async getUserById(req: Request, res: Response) {
+  try {
+    const { id } = req.params; // extract id
 
-//     const user = await User.findOne({
-//       where: { id } // query by id
-//     });
+    const user = await User.findOne({
+      where: { id } // query by id
+    });
 
-//     if (!user) {
-//       return res.status(404).json({ success: false, message: "User not found" });
-//     }
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
 
-//     res.status(200).json({ success: true, data: user });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ success: false, message: "Server error" });
-//   }
-// }
+    res.status(200).json({ success: true, data: user,message:"User fetched successfully." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+}
 
 //   //update profile
 //   static async updateProfile(req: Request, res: Response) {

@@ -23,7 +23,7 @@ export const createProduct = async (req: Request, res: Response) => {
     ? req.file.path
     : "https://via.placeholder.com/500";
 
-  if (!name || !price || !category) {
+  if (!name || !price || !category || !description) {
     return res.status(400).json({
       message: "Please provide name, price and category!",
     });

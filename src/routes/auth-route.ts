@@ -1,6 +1,7 @@
 import express, { Router } from "express"
 import asyncErrorHandler from "../services/async-error-handler"
 import AuthController from "../controllers/auth-controller"
+import Middleware, { Role } from "../middleware/middleware"
 
 const router:Router=express.Router()
 
@@ -46,11 +47,11 @@ router.route("/reset-password").post(
 // )
 
 // //get users by id
-// router.route("/users/:id").get(
-//     Middleware.isLoggedIn,
-//     Middleware.accessTo(Role.Admin,Role.Student),
-//     asyncErrorHandler(AuthController.getUserById)
-// )
+router.route("/user/:id").get(
+    Middleware.isLoggedIn,
+    Middleware.accessTo(Role.Admin,Role.Customer),
+    asyncErrorHandler(AuthController.getUserById)
+)
 
 // //update user/admin profile
 // router.route("/update-profile/:id").patch(
