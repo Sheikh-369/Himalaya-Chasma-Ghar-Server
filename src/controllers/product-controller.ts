@@ -68,6 +68,23 @@ export const getAllProducts = async (_req: Request, res: Response) => {
 /**
  * Get Product By ID
  */
+// export const getProductById = async (req: Request, res: Response) => {
+//   const { id } = req.params;
+
+//   const product = await Product.findOne({ where: { id } });
+
+//   if (!product) {
+//     return res.status(404).json({
+//       message: "Product not found!",
+//     });
+//   }
+
+//   res.status(200).json({
+//     message: "Product fetched successfully.",
+//     product,
+//   });
+// };
+
 export const getProductById = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -79,9 +96,24 @@ export const getProductById = async (req: Request, res: Response) => {
     });
   }
 
+  // Ensure features and frameDetails are always arrays
+  const formattedProduct = {
+    ...product.toJSON(),
+    features: Array.isArray(product.features)
+      ? product.features
+      : product.features
+      ? JSON.parse(product.features)
+      : [],
+    frameDetails: Array.isArray(product.frameDetails)
+      ? product.frameDetails
+      : product.frameDetails
+      ? JSON.parse(product.frameDetails)
+      : [],
+  };
+
   res.status(200).json({
     message: "Product fetched successfully.",
-    product,
+    product: formattedProduct,
   });
 };
 

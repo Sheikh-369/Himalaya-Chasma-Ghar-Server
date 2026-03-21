@@ -183,6 +183,13 @@ class AuthController {
       });
     }
 
+    //check new password and confirm new password
+    if(newPassword != confirmNewPassword){
+      return res.status(400).json({
+        message:"New Password and Confirm New Password didn't match."
+      })
+    }
+
     // Hash the new password and save
     const hashedPassword = bcrypt.hashSync(newPassword, 10);
     existingUser.userPassword = hashedPassword;
