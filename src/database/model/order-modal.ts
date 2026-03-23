@@ -61,6 +61,13 @@ class Order extends Model {
     defaultValue: "pending",
   })
   declare orderStatus: "pending" | "confirmed" | "delivered" | "cancelled";
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  declare paymentProof: string | null;
 }
+
 
 export default Order;

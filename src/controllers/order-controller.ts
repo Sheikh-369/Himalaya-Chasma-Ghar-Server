@@ -3,6 +3,7 @@ import Order from "../database/model/order-modal";
 import Product from "../database/model/product-model";
 import sequelize from "../database/connection";
 import OrderItem from "../database/model/order-item-model";
+import sendEmail from "../services/emailService";
 
 /**
  * Create Order
@@ -21,14 +22,30 @@ export const createOrder = async (req: Request, res: Response) => {
       items,
     } = req.body;
 
+    // ✅ Handle uploaded file
+    const paymentProof = req.file ? req.file.path : null;
+
+    // ✅ Parse items (important for FormData)
+    let parsedItems;
+    try {
+      parsedItems =
+        typeof items === "string" ? JSON.parse(items) : items;
+    } catch (err) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Invalid items format",
+      });
+    }
+
+    // ✅ Basic validation
     if (
       !firstName ||
       !lastName ||
       !whatsappNumber ||
       !deliveryAddress ||
       !paymentMethod ||
-      !items ||
-      items.length === 0
+      !parsedItems ||
+      parsedItems.length === 0
     ) {
       await transaction.rollback();
       return res.status(400).json({
@@ -36,8 +53,17 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
+    // ✅ QR payment must include screenshot
+    if (paymentMethod === "qr_scan" && !paymentProof) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Payment screenshot is required for QR payments",
+      });
+    }
+
     let totalAmount = 0;
 
+    // ✅ Create order first
     const order = await Order.create(
       {
         firstName,
@@ -46,15 +72,17 @@ export const createOrder = async (req: Request, res: Response) => {
         email: email || null,
         deliveryAddress,
         paymentMethod,
-        totalAmount: 0,
+        totalAmount: 0, // will update later
+        paymentProof, // ✅ saved here
       },
       { transaction }
     );
 
     const orderItemsData = [];
 
-    for (const item of items) {
-      const product = await Product.findOne({ where: { id: item.productId } });
+    // ✅ Loop through items
+    for (const item of parsedItems) {
+      const product = await Product.findByPk(item.productId);
 
       if (!product) {
         await transaction.rollback();
@@ -78,20 +106,75 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
+    // ✅ Save order items
     await OrderItem.bulkCreate(orderItemsData, { transaction });
 
+    // ✅ Update total amount
     order.totalAmount = totalAmount;
     await order.save({ transaction });
 
+    // ✅ Commit transaction
     await transaction.commit();
 
-    res.status(200).json({
-      message: "Order created successfully!",
+    sendEmail({
+      to: email,
+      subject: "Your Order Confirmation - Himalaya Chasma Ghar",
+      html: `<div style="font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb;">
+      
+      <!-- Header -->
+      <div style="background: linear-gradient(90deg, #0ea5e9, #22c55e); padding: 20px; color: white; text-align: center;">
+        <h2 style="margin: 0;">Himalaya Chasma Ghar</h2>
+        <p style="margin: 5px 0 0;">Birtamode, Jhapa, Nepal</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding: 20px; color: #333;">
+        <h3 style="margin-top: 0;">🛍️ Order Confirmation</h3>
+
+        <p>Hi <strong>${firstName} ${lastName}</strong>,</p>
+        <p>Thank you for your order! Here are your order details:</p>
+
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0;">
+          <p><strong>📦 Order ID:</strong> ${order.id}</p>
+          <p><strong>💰 Total:</strong> Rs. ${totalAmount}</p>
+          <p><strong>💳 Payment Method:</strong> ${paymentMethod}</p>
+          <p><strong>📍 Delivery Address:</strong> ${deliveryAddress}</p>
+        </div>
+
+        <p style="margin-top: 20px;">
+          ${
+            paymentMethod === "visit_pay"
+              ? "⏳ Please visit our store to complete your payment."
+              : paymentMethod === "qr_scan"
+              ? "✅ Your QR payment proof has been received. We'll verify it shortly."
+              : "🚚 Your order will be delivered soon."
+          }
+        </p>
+
+        <p style="margin-top: 20px;">We’ll contact you soon via WhatsApp.</p>
+      </div>
+
+      <!-- Footer -->
+      <div style="background: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #666;">
+        <p style="margin: 0;">© Himalaya Chasma Ghar</p>
+        <p style="margin: 0;">Birtamode, Jhapa, Nepal</p>
+      </div>
+    </div>
+  </div>`,
+    });
+
+    return res.status(200).json({
+      message: "Order placed successfully!",
       order,
     });
+
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({
+
+    console.error("Order creation error:", error);
+
+    return res.status(500).json({
       message: "Failed to create order",
       error,
     });
