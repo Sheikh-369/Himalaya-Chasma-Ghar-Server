@@ -204,7 +204,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     });
   }
 
-  // Optional rules
+  // ✅ Prevent unnecessary update
+  if (order.orderStatus === status) {
+    return res.status(400).json({
+      message: "Order already has this status!",
+    });
+  }
+
+  // ✅ Business rules
   if (order.orderStatus === "cancelled") {
     return res.status(400).json({
       message: "Cancelled order cannot be updated!",
@@ -217,10 +224,97 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     });
   }
 
+  // ✅ Save old status (for email context)
+  const previousStatus = order.orderStatus;
+
+  // ✅ Update
   order.orderStatus = status;
   await order.save();
 
-  res.status(200).json({
+  // ✅ Send email ONLY if user has email
+  if (order.email) {
+    let subject = "";
+    let message = "";
+
+    switch (status) {
+      case "confirmed":
+        subject = "✅ Order Confirmed - Himalaya Chasma Ghar";
+        message = `
+          <p>Your order <strong>#${order.id}</strong> has been confirmed.</p>
+          <p>We are now preparing your items.</p>
+        `;
+        break;
+
+      case "delivered":
+        subject = "🎉 Order Delivered - Himalaya Chasma Ghar";
+        message = `
+          <p>Your order <strong>#${order.id}</strong> has been delivered successfully.</p>
+          <p>Thank you for shopping with us ❤️</p>
+        `;
+        break;
+
+      case "cancelled":
+        subject = "❌ Order Cancelled - Himalaya Chasma Ghar";
+        message = `
+          <p>Your order <strong>#${order.id}</strong> has been cancelled.</p>
+          <p>If this was a mistake, please contact us.</p>
+        `;
+        break;
+
+      case "pending":
+        subject = "⏳ Order Pending - Himalaya Chasma Ghar";
+        message = `
+          <p>Your order <strong>#${order.id}</strong> is currently pending.</p>
+        `;
+        break;
+    }
+
+    // ✅ Reusable email template
+    await sendEmail({
+      to: order.email,
+      subject,
+      html: `
+        <div style="font-family: Arial; background:#f4f6f8; padding:20px;">
+          <div style="max-width:600px; margin:auto; background:white; border-radius:10px; overflow:hidden;">
+            
+            <div style="background: linear-gradient(90deg,#0ea5e9,#22c55e); padding:20px; color:white; text-align:center;">
+              <h2>Himalaya Chasma Ghar</h2>
+              <p>Birtamode, Jhapa, Nepal</p>
+            </div>
+
+            <div style="padding:20px;">
+              <h3>Order Update</h3>
+
+              <p>Hi <strong>${order.firstName} ${order.lastName}</strong>,</p>
+
+              <p>Your order status has been updated:</p>
+
+              <p>
+                <strong>Order ID:</strong> #${order.id}<br/>
+                <strong>Previous Status:</strong> ${previousStatus}<br/>
+                <strong>New Status:</strong> ${status}
+              </p>
+
+              <div style="margin-top:15px;">
+                ${message}
+              </div>
+
+              <p style="margin-top:20px;">
+                📞 We may contact you via WhatsApp if needed.
+              </p>
+            </div>
+
+            <div style="background:#f1f5f9; padding:15px; text-align:center; font-size:12px;">
+              © Himalaya Chasma Ghar
+            </div>
+
+          </div>
+        </div>
+      `,
+    });
+  }
+
+  return res.status(200).json({
     message: "Order status updated successfully!",
     order,
   });
@@ -258,5 +352,108 @@ export const cancelOrder = async (req: Request, res: Response) => {
   res.status(200).json({
     message: "Order cancelled successfully!",
     order,
+  });
+};
+
+
+/**
+ * Get All Orders (Admin)
+ */
+export const getAllOrders = async (req: Request, res: Response) => {
+  try {
+    const orders = await Order.findAll({
+      include: [
+        {
+          model: OrderItem,
+          include: [Product],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      message: "Orders fetched successfully!",
+      orders,
+    });
+  } catch (error) {
+    console.error("Fetch orders error:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch orders",
+      error,
+    });
+  }
+};
+
+/**
+ * Get Single Order
+ */
+export const getOrderById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const order = await Order.findOne({
+      where: { id },
+      include: [
+        {
+          model: OrderItem,
+          include: [Product],
+        },
+      ],
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found!",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Order fetched successfully!",
+      order,
+    });
+  } catch (error) {
+    console.error("Fetch single order error:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch order",
+      error,
+    });
+  }
+};
+
+/**
+ * Delete Order (Admin)
+ */
+export const deleteOrder = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const transaction = await sequelize.transaction();
+
+  // Find the order first
+  const order = await Order.findOne({
+    where: { id },
+    include: [OrderItem],
+    transaction,
+  });
+
+  if (!order) {
+    await transaction.rollback();
+    return res.status(404).json({
+      message: "Order not found!",
+    });
+  }
+
+  // Delete associated OrderItems first
+  await OrderItem.destroy({ where: { orderId: id }, transaction });
+
+  // Delete the order itself
+  await Order.destroy({ where: { id }, transaction });
+
+  await transaction.commit();
+
+  return res.status(200).json({
+    message: "Order deleted successfully!",
+    id,
   });
 };

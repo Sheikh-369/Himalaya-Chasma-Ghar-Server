@@ -25,4 +25,14 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
+/* ================= ASSOCIATIONS ================= */
+
+// Order ↔ OrderItem
+Order.hasMany(OrderItem, { foreignKey: "orderId" });
+OrderItem.belongsTo(Order, { foreignKey: "orderId" });
+
+// Product ↔ OrderItem
+Product.hasMany(OrderItem, { foreignKey: "productId" });
+OrderItem.belongsTo(Product, { foreignKey: "productId" });
+
 export default sequelize;
