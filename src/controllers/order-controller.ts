@@ -22,8 +22,6 @@ export const createOrder = async (req: Request, res: Response) => {
       items,
     } = req.body;
 
-    // ✅ Handle uploaded file
-    const paymentProof = req.file ? req.file.path : null;
 
     // ✅ Parse items (important for FormData)
     let parsedItems;
@@ -53,13 +51,24 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
+
     // ✅ QR payment must include screenshot
-    if (paymentMethod === "qr_scan" && !paymentProof) {
+    if (paymentMethod === "qr_scan" && !req.file) {
       await transaction.rollback();
       return res.status(400).json({
-        message: "Payment screenshot is required for QR payments",
+        message: "Full payment screenshot is required",
       });
     }
+
+    if (paymentMethod === "cod" && !req.file) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Delivery fee screenshot is required for COD",
+      });
+    }
+
+    // ✅ Handle uploaded file
+    const paymentProof = req.file ? req.file.path : null;
 
     let totalAmount = 0;
 
@@ -152,7 +161,7 @@ export const createOrder = async (req: Request, res: Response) => {
           }
         </p>
 
-        <p style="margin-top: 20px;">We’ll contact you soon via WhatsApp.</p>
+        <p style="margin-top: 20px;">We'll contact you soon via WhatsApp.</p>
       </div>
 
       <!-- Footer -->

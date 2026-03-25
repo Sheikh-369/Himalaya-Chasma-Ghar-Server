@@ -67,6 +67,7 @@ class Order extends Model {
     allowNull: true,
   })
   declare paymentProof: string | null;
+  
 }
 
 
