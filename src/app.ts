@@ -14,7 +14,8 @@ app.use(express.json())
 app.use(
   cors({
     origin:[
-      "http://localhost:4028"
+      "http://localhost:4028",
+      "himalayachasmaghar.vercel.app"
     ],  //do not use slash(/) here
 
     credentials: true
