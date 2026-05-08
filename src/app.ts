@@ -15,7 +15,8 @@ app.use(
   cors({
     origin:[
       "http://localhost:4028",
-      "https://himalayachasmaghar.vercel.app"
+      "https://himalayachasmaghar.vercel.app",
+      'https://www.himalayachasmaghar.com.np'
     ],  //do not use slash(/) here
 
     credentials: true
