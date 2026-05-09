@@ -227,56 +227,55 @@ static async getUserById(req: Request, res: Response) {
   }
 }
 
-//   //update profile
-//   static async updateProfile(req: Request, res: Response) {
-//     const { id } = req.params;
-//     const { 
-//       userName, bio, city, country,whatsAppNumber, 
-//       oldPassword, newPassword, confirmPassword 
-//     } = req.body;
+  //update profile
+  static async updateProfile(req: Request, res: Response) {
+    const { id } = req.params;
+    const { 
+      userName, city, district,whatsAppNumber, 
+      oldPassword, newPassword, confirmPassword 
+    } = req.body;
 
-//     // const user = await User.findOne(id);
-//     const user = await User.findOne({ where: { id } });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+    // const user = await User.findOne(id);
+    const user = await User.findOne({ where: { id } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-//     // Update basic fields
-//     if (userName) user.userName = userName;
-//     if (bio) user.bio = bio;
-//     if (city) user.city = city;
-//     if (country) user.country = country;
-//     if (whatsAppNumber) user.whatsAppNumber = whatsAppNumber;
+    // Update basic fields
+    if (userName) user.userName = userName;
+    if (city) user.city = city;
+    if (district) user.district = district;
+    if (whatsAppNumber) user.whatsAppNumber = whatsAppNumber;
 
-//     // Update profile image
-//     if (req.file) user.profileImage = req.file.path;
+    // Update profile image
+    if (req.file) user.profileImage = req.file.path;
 
-//     // Handle password change
-//     if (oldPassword || newPassword || confirmPassword) {
-//       if (!oldPassword || !newPassword || !confirmPassword) {
-//         return res.status(400).json({ message: "Please provide old, new and confirm passwords." });
-//       }
+    // Handle password change
+    if (oldPassword || newPassword || confirmPassword) {
+      if (!oldPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: "Please provide old, new and confirm passwords." });
+      }
 
-//       const isMatch = await bcrypt.compare(oldPassword, user.userPassword);
-//       if (!isMatch) {
-//         return res.status(400).json({ message: "Old password is incorrect." });
-//       }
+      const isMatch = await bcrypt.compare(oldPassword, user.userPassword);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Old password is incorrect." });
+      }
 
-//       if (newPassword !== confirmPassword) {
-//         return res.status(400).json({ message: "New password and confirm password do not match." });
-//       }
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: "New password and confirm password do not match." });
+      }
 
-//       user.userPassword = await bcrypt.hash(newPassword, 10);
-//     }
+      user.userPassword = await bcrypt.hash(newPassword, 10);
+    }
 
-//     await user.save();
+    await user.save();
 
-//     const { userPassword, ...safeUser } = user.get({ plain: true });
-//     res.status(200).json({
-//       message: "Profile updated successfully",
-//       user: safeUser,
-//     });
-//   }
+    const { userPassword, ...safeUser } = user.get({ plain: true });
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: safeUser,
+    });
+  }
 
 }
 

@@ -2,6 +2,7 @@ import express, { Router } from "express"
 import asyncErrorHandler from "../services/async-error-handler"
 import AuthController from "../controllers/auth-controller"
 import Middleware, { Role } from "../middleware/middleware"
+import upload from "../middleware/multer-upload"
 
 const router:Router=express.Router()
 
@@ -54,11 +55,11 @@ router.route("/user/:id").get(
 )
 
 // //update user/admin profile
-// router.route("/update-profile/:id").patch(
-//     Middleware.isLoggedIn,
-//     Middleware.accessTo(Role.Admin,Role.Student),
-//     upload.single("profileImage"),
-//     asyncErrorHandler(AuthController.updateProfile)
-// )
+router.route("/update-profile/:id").patch(
+    Middleware.isLoggedIn,
+    Middleware.accessTo(Role.Admin,Role.Customer),
+    upload.single("profileImage"),
+    asyncErrorHandler(AuthController.updateProfile)
+)
 
 export default router
