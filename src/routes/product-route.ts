@@ -1,3 +1,50 @@
+// import express, { Router } from "express";
+// import asyncErrorHandler from "../services/async-error-handler";
+// import * as ProductController from "../controllers/product-controller";
+// import upload from "../middleware/multer-upload";
+
+// const router: Router = express.Router();
+
+// // Create a product
+// router.route("/product").post(
+//   upload.single("image"),
+//   asyncErrorHandler(ProductController.createProduct)
+// );
+
+// // Get all products
+// router.route("/product").get(
+//     asyncErrorHandler(ProductController.getAllProducts)
+// );
+
+// // Get product by ID
+// router.route("/product/:id").get(
+//     asyncErrorHandler(ProductController.getProductById)
+// );
+
+// // Update product
+// router.route("/product/:id").patch(
+//   upload.single("image"),
+//   asyncErrorHandler(ProductController.updateProduct)
+// );
+
+// // Delete product
+// router.route("/product/:id").delete(
+//     asyncErrorHandler(ProductController.deleteProduct)
+// );
+
+// // Get products by category
+// router.route("/product/:category").get(
+//   asyncErrorHandler(ProductController.getProductsByCategory)
+// );
+
+// // Get featured products
+// router.route("/product/featured").get(
+//     asyncErrorHandler(ProductController.getFeaturedProducts)
+// );
+
+// export default router;
+
+
 import express, { Router } from "express";
 import asyncErrorHandler from "../services/async-error-handler";
 import * as ProductController from "../controllers/product-controller";
@@ -7,7 +54,8 @@ const router: Router = express.Router();
 
 // Create a product
 router.route("/product").post(
-  upload.single("image"),
+  // Changed from .single("image") to .array("gallery", 4)
+  upload.array("gallery", 4), 
   asyncErrorHandler(ProductController.createProduct)
 );
 
@@ -23,7 +71,8 @@ router.route("/product/:id").get(
 
 // Update product
 router.route("/product/:id").patch(
-  upload.single("image"),
+  // Changed from .single("image") to .array("gallery", 4)
+  upload.array("gallery", 4),
   asyncErrorHandler(ProductController.updateProduct)
 );
 
@@ -33,12 +82,12 @@ router.route("/product/:id").delete(
 );
 
 // Get products by category
-router.route("/product/:category").get(
+router.route("/product/category/:category").get(
   asyncErrorHandler(ProductController.getProductsByCategory)
 );
 
 // Get featured products
-router.route("/product/featured").get(
+router.route("/product/featured/items").get(
     asyncErrorHandler(ProductController.getFeaturedProducts)
 );
 

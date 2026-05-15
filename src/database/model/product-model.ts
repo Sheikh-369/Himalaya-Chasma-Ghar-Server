@@ -63,6 +63,14 @@ class Product extends Model {
   })
   declare image: string;
 
+  // Storing the array of 4 images here as JSONB
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+    defaultValue: [], 
+  })
+  declare gallery: string[] | null; 
+
   @Column({
     type: DataType.STRING,
     allowNull: true,
