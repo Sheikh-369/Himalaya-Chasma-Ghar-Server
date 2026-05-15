@@ -50,7 +50,7 @@ interface IMailInformation {
 const sendEmail = async (mailInformation: IMailInformation) => {
   try {
     await resend.emails.send({
-      from: "Himalaya Chasma Ghar <noreply@yourdomain.com>",
+      from: "Himalaya Chasma Ghar <noreply@himalayachasmaghar.com.np>",
       to: [mailInformation.to],
       subject: mailInformation.subject,
       html: mailInformation.html,
